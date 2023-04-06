@@ -27,18 +27,74 @@ class PythonSqliteDataBase(object):
 
         create_table(self)
 
-    def add_items_to_table(self, items: tuple):
+    def add_items(self, items: tuple):
         for item_value in items:
-            data_script = f"INSERT INTO {self.table_name}(name, age, gender, is_married) VALUES(?, ?, ?, ?)"
-            self.connection.execute(data_script, item_value)
+            sql_script = f"INSERT INTO {self.table_name}(name, age, gender, is_married) VALUES(?, ?, ?, ?)"
+            self.connection.execute(sql_script, item_value)
             self.connection.commit()
 
-    def read_item_from_table(self):
-        data_script = f" SELECT * FROM {self.table_name}"
-        data = self.connection.execute(data_script)
+    def read_item(self, column_name: str):
+        """Returns the SQL cursor. You have to loop through it with the "for" method."""
 
-        for item in data:
-            print(item)
+        sql_script = f" SELECT ({column_name}) FROM {self.table_name}"
+        data = self.connection.execute(sql_script)
+
+        return data
+
+    def read_all_items(self):
+        """Returns the SQL cursor. You have to loop through it with the "for" method."""
+
+        sql_script = f" SELECT * FROM {self.table_name}"
+        data = self.connection.execute(sql_script)
+
+        return data
+
+    def update_items(self, new_data: dict, condition: dict):
+        new_data_list = [(key, value) for key, value in new_data.items()]
+        condition_key = [key for key in condition.keys()][0]
+        condition_value = [value for value in condition.values()][0]
+
+        if type(condition_value) == str:
+            for item in new_data_list:
+                if type(item[1]) == str:
+                    data_script = f""" UPDATE {self.table_name}
+                                        SET {item[0]} = '{item[1]}'
+                                        WHERE {condition_key} = '{condition_value}'"""
+                    self.connection.execute(data_script)
+                    self.connection.commit()
+                else:
+                    data_script = f""" UPDATE {self.table_name}
+                                        SET {item[0]} = {item[1]}
+                                        WHERE {condition_key} = '{condition_value}'"""
+                    self.connection.execute(data_script)
+                    self.connection.commit()
+        else:
+            for item in new_data_list:
+                if type(item[1]) == str:
+                    data_script = f""" UPDATE {self.table_name}
+                                        SET {item[0]} = '{item[1]}'
+                                        WHERE {condition_key} = {condition_value}"""
+                    self.connection.execute(data_script)
+                    self.connection.commit()
+                else:
+                    data_script = f""" UPDATE {self.table_name}
+                                        SET {item[0]} = {item[1]}
+                                        WHERE {condition_key} = {condition_value}"""
+                    self.connection.execute(data_script)
+                    self.connection.commit()
+
+    def delete_items(self, condition):
+        condition_key = [key for key in condition.keys()][0]
+        condition_value = [value for value in condition.values()][0]
+        data_script = """"""
+
+        if type(condition_value) == str:
+            data_script = f""" DELETE FROM {self.table_name} WHERE {condition_key} = '{condition_value}'"""
+        else:
+            data_script = f""" DELETE FROM {self.table_name} WHERE {condition_key} = {condition_value}"""
+
+        self.connection.execute(data_script)
+        self.connection.commit()
 
     def close_database(self):
         self.connection.close()
@@ -55,7 +111,7 @@ my_database = PythonSqliteDataBase(
     ],
 )
 
-my_database.add_items_to_table(
+my_database.add_items(
     items=[
         ("Hamid", 29, "male", False),
         ("Ali", 13, "male", False),
@@ -63,5 +119,14 @@ my_database.add_items_to_table(
         ("Mamad", 50, "male", True),
     ]
 )
-my_database.read_item_from_table()
+
+my_database.read_all_items()
+
+new_data = {"name": "Hamid Reza", "age": 30, "is_married": True}
+
+condition = {"age": 50}
+
+my_database.update_items(new_data, condition)
+
+# my_database.delete_items(condition)
 my_database.close_database()
